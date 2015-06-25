@@ -16,6 +16,7 @@ before_install:
 - gcloud -q components update gae-python
 - if [ -a python-docs-samples.json ]; then gcloud auth activate-service-account --key-file
      silver-python.json; fi
+- gcloud config set project silver-python2
 install:
 - pip install -r requirements.txt
 script:

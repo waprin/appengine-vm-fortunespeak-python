@@ -21,5 +21,5 @@ before_install:
 install:
 - pip install -r requirements.txt
 script:
-- printf -- '\n\n' | gcloud -q preview app deploy app.yaml --remote
+- gcloud -q preview app deploy app.yaml --remote
 - python e2e_test.py

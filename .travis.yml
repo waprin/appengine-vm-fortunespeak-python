@@ -14,7 +14,7 @@ before_install:
   && printf '\ny\n\ny\ny\n' | ./google-cloud-sdk/install.sh && cd $TRAVIS_BUILD_DIR;
   fi
 - gcloud -q components update gae-python
-- if [ -a python-docs-samples.json ]; then gcloud auth activate-service-account --key-file
+- if [ -a silver-python.json ]; then gcloud auth activate-service-account --key-file
      silver-python.json; fi
 - gcloud config set project silver-python2
 install:

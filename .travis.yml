@@ -17,6 +17,7 @@ before_install:
 - if [ -a silver-python.json ]; then gcloud auth activate-service-account --key-file
      silver-python.json; fi
 - gcloud config set project silver-python2
+- ssh-keygen -b 2048 -t rsa -f /tmp/sshkey -q -N ""
 install:
 - pip install -r requirements.txt
 script:

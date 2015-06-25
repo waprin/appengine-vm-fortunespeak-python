@@ -17,7 +17,7 @@ before_install:
 - if [ -a python-docs-samples.json ]; then gcloud auth activate-service-account --key-file
      silver-python.json; fi
 install:
-- pip install requirements.txt
+- pip install -r requirements.txt
 script:
 - gcloud preview app deploy app.yaml
 - python e2e_test.py

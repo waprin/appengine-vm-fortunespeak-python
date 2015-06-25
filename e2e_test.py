@@ -18,6 +18,7 @@ HOST = 'http://silver-python2.appspot.com'
 response = requests.get("{}/publish".format(HOST))
 task_id = response.content
 
+logging.info("Processing task id {}".format(task_id))
 SLEEP_DURATION_S = 5
 logging.info("Waiting for {} seconds".format(SLEEP_DURATION_S))
 time.sleep(SLEEP_DURATION_S)

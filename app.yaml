@@ -1,27 +1,19 @@
-# This file specifies your Python application's runtime configuration.
-# See https://cloud.google.com/appengine/docs/managed-vms/config for details.
-runtime: custom
-vm: true
+# Demo app.
+runtime: python27
 api_version: 1
-module: default
+threadsafe: true
+vm: true
 
-resources:
-  cpu: .5
-  memory_gb: 1.3
-  disk_size_gb: 10
+manual_scaling:
+  instances: 1
 
-automatic_scaling:
-  min_num_instances: 1
-  max_num_instances: 5
-  cool_down_period_sec: 60
-  cpu_utilization:
-    target_utilization: 0.5
+handlers:
 
-beta_settings:
-  service_account_scopes: >
-    https://www.googleapis.com/auth/userinfo.email,
-    https://www.googleapis.com/auth/cloud-platform
+# Favicon.  Without this, the browser hits this once per page view.
+- url: /favicon.ico
+  static_files: favicon.ico
+  upload: favicon.ico
 
-env_variables:
-  PYTHON_ENV: production
-  LOG_PATH: /var/log/app_engine/custom_logs
+# Main app.  All the real work is here.
+- url: /.*
+  script: main.APPLICATION

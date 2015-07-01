@@ -1,88 +1,70 @@
-from oauth2client.client import GoogleCredentials
+"""A simple 'hello world' sample, which accesses the 'users' service,
+and shows how to get information about the current instance.
+"""
 
-__author__ = 'waprin'
+import logging
+import os
 
-from gcloud import pubsub
-from gcloud import datastore
-import json
+import jinja2
+import webapp2
 
-from flask import Flask
+from google.appengine.api import app_identity
+from google.appengine.api import modules
+from google.appengine.api import users
 
-
-PROJECT_ID = "silver-python2"
-TOPIC_NAME = "demonstration-topic"
-SUBSCRIPTION_NAME = "java-subscription"
-
-def get_topic():
-    """Gets the configured topic, creating it if needed."""
-    topic = pubsub.Topic(TOPIC_NAME)
-    if not topic.exists():
-        topic.create()
-
-    return topic
-
-def get_subscription():
-    """Gets the configured subscription, creating it if needed."""
-    topic = get_topic()
-
-    subscription = pubsub.Subscription(SUBSCRIPTION_NAME, topic)
-
-    if not subscription.exists():
-        subscription.create()
-
-    return subscription
+JINJA_ENVIRONMENT = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
+    extensions=['jinja2.ext.autoescape'])
 
 
-def queue_book():
+def get_url_for_instance(instance_id):
+    """Return a full url of the current instance.
+    Args:
+        A string to represent an VM instance.
+    Returns:
+        URL string for the instance.
     """
-    Queues a book for background processing. This publishes a message
-    containing the book's ID to the configured pubsub topic. Any worker
-    instances can receive this message via their shared subscription.
+    hostname = app_identity.get_default_version_hostname()
+    return 'http://{}.{}.{}'.format(
+        instance_id, modules.get_current_version_name(), hostname)
+
+
+def get_signin_navigation(original_url):
+    """Return a pair of a link text and a link for logging in/out.
+    Args:
+        An original URL.
+    Returns:
+        Two-value tuple; a url and a link text.
     """
-    key = datastore.Key('Book')
-
-    entity = datastore.Entity(key=key)
-
-    data = {
-        'status': 'UNPROCESSED'
-    }
-    entity.update(data)
-    datastore.put(entity)
-    data['id'] = entity.key.id
-
-    topic = get_topic()
-    topic.publish(json.dumps(data).encode('utf-8'))
-
-    key = datastore.Key('Book', entity.key.id)
-
-    results = datastore.get(key)
-
-    return entity.key.id
+    if users.get_current_user():
+        url = users.create_logout_url(original_url)
+        url_linktext = 'Logout'
+    else:
+        url = users.create_login_url(original_url)
+        url_linktext = 'Login'
+    return url, url_linktext
 
 
+class Hello(webapp2.RequestHandler):
+    """Display a greeting, using user info if logged in, and display information
+    about the instance.
+    """
 
-datastore.set_defaults(dataset_id=PROJECT_ID)
+    def get(self):
+        """Display a 'Hello' message"""
+        instance_id = modules.get_current_instance_id()
+        message = 'Hello'
+        if users.get_current_user():
+            nick = users.get_current_user().nickname()
+            message += ', %s' % nick
+        template = JINJA_ENVIRONMENT.get_template('index.html')
+        url, url_linktext = get_signin_navigation(self.request.uri)
+        self.response.out.write(template.render(instance_url=get_url_for_instance(instance_id),
+                                                url=url,
+                                                url_linktext=url_linktext,
+                                                message=message))
 
-credentials = GoogleCredentials.get_application_default()
-pubsub.set_default_connection(pubsub.Connection(credentials))
-pubsub.set_default_project(PROJECT_ID)
 
-app = Flask(__name__)
-
-
-
-
-@app.route('/publish')
-def publish():
-    id = queue_book()
-    return str(id)
-
-@app.route('/status/<int:id>')
-def get_status(id):
-    key = datastore.Key('Book', id)
-    result = datastore.get(key)
-    print('result is {}'.format(result))
-    return result['status']
-
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=8080, debug=True)
+APPLICATION = webapp2.WSGIApplication([
+    ('/', Hello)
+], debug=True)
